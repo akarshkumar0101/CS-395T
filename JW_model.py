@@ -34,3 +34,4 @@ class JWModel0(torch.nn.Module):
     #     r = Detector()
     #     r.load_state_dict(load(path.join(path.dirname(path.abspath(__file__)), 'det.th'), map_location='cpu'))
     #     return r
+    
