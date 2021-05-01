@@ -160,7 +160,7 @@ def show_stats(Y, Y_pred, show_vox_corr_hist=False):
     print('Mean Correlation: ', r.item())
     if show_vox_corr_hist:
         plt.title('Correlation over voxels')
-        plt.hist(voxcorrs.numpy(), bins=100)
+        plt.hist(voxcorrs.detach().cpu().numpy(), bins=100)
         plt.show()
     
 
