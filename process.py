@@ -162,5 +162,6 @@ def show_stats(Y, Y_pred, show_vox_corr_hist=False):
         plt.title('Correlation over voxels')
         plt.hist(voxcorrs.detach().cpu().numpy(), bins=100)
         plt.show()
+    return mse.item(), r.item()
     
 
