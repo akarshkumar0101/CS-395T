@@ -18,12 +18,13 @@ class JWModel0(torch.nn.Module):
         #                                  torch.nn.Sigmoid(),
         #                                  torch.nn.Linear(1000, d_out))
         self.V = V
-        self.Linear1 = torch.nn.Linear(d_in, 100)
+        self.Linear1 = torch.nn.Linear(d_in, 1000)
         # self.Linear2 = torch.nn.Linear(d_in, 100)
-        self.Linear3 = torch.nn.Linear(d_in, 100)
+        self.Linear3 = torch.nn.Linear(d_in, 1000)
         self.re = torch.nn.ReLU()
         self.maxPool = torch.nn.MaxPool1d(2)
-        self.FinLin = torch.nn.Linear(100, d_out)
+        self.FinLin = torch.nn.Linear(1000, d_out)
+        self.dropout = torch.nn.Dropout(0.25)
         
     def forward(self, X):
         # print(X.shape)
@@ -33,9 +34,9 @@ class JWModel0(torch.nn.Module):
         # Y = torch.matmul(X, self.V)
         # print(self.Linear1(X).shape)
         Y = torch.cat((
-          self.Linear1(X).unsqueeze(2), 
+          self.dropout(self.Linear1(X).unsqueeze(2)), 
           # self.Linear2(X).unsqueeze(2), 
-          self.Linear3(X).unsqueeze(2)), 2) 
+          self.dropout(self.Linear3(X).unsqueeze(2))), 2) 
         Y = self.maxPool(Y)
         # print(Y.shape)
         Y = self.FinLin(Y.squeeze())
