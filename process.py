@@ -2,6 +2,7 @@ import os
 import tables
 import numpy as np
 import torch
+torch.manual_seed(0)
 import matplotlib.pyplot as plt
 
 from stimulus_utils import load_grids_for_stories
@@ -48,7 +49,7 @@ It loads BERT embeddings from the directory called 'bert_word_embeddings'.
 if True, method will return X_train, X_val, X_test, Y_train, Y_val, Y_test, mask
 else, method will return X_train, X_test, Y_train, Y_test, mask
 """
-def load_data(use_bert_embeddings=True, trim=5, ndelays=4, make_validation_set=True):
+def load_data(use_bert_embeddings=True, trim=5, ndelays=4, make_validation_set=True, keep_hrf_shape=False):
     interptype = "lanczos" # filter type
     window = 3 # number of lobes in Lanczos filter
 
@@ -59,7 +60,6 @@ def load_data(use_bert_embeddings=True, trim=5, ndelays=4, make_validation_set=T
     Rstories = ['alternateithicatom', 'avatar', 'howtodraw', 'legacy', 
                 'life', 'myfirstdaywiththeyankees', 'naked', 
                 'odetostepfather', 'souls', 'undertheinfluence']
-
     # Pstories are the test (or Prediction) stories (well, story), which we will use to test our models
     Pstories = ['wheretheressmoke']
 
@@ -110,17 +110,27 @@ def load_data(use_bert_embeddings=True, trim=5, ndelays=4, make_validation_set=T
     zPresp = resptf.root.zPresp.read()
     mask = resptf.root.mask.read()
     
+    if not keep_hrf_shape:
+        delRstim = delRstim.reshape(Rstim.shape[0], -1)
+        delPstim = delPstim.reshape(Pstim.shape[0], -1)
+        
     # rename these
     X_test = torch.from_numpy(delPstim).float()
     Y_test = torch.from_numpy(zPresp).float()
     mask = torch.from_numpy(mask)
     
     if make_validation_set:
-        val_size = len(delPstim)
-        X_train = torch.from_numpy(delRstim[:-val_size]).float()
-        X_val = torch.from_numpy(delRstim[-val_size:]).float()
-        Y_train = torch.from_numpy(zRresp[:-val_size]).float()
-        Y_val = torch.from_numpy(zRresp[-val_size:]).float()
+        val_size = len(delPstim)*3
+        # we shouldn't use random indices because the samples are NOT RANDOM, 
+        # they come from a sequence that depend on nearby samples
+#         idxs = torch.randperm(len(delRstim))
+        idxs = torch.arange(len(delRstim)) 
+        val_idxs = idxs[:val_size]
+        train_idxs = idxs[val_size:]
+        X_train = torch.from_numpy(delRstim[train_idxs]).float()
+        X_val = torch.from_numpy(delRstim[val_idxs]).float()
+        Y_train = torch.from_numpy(zRresp[train_idxs]).float()
+        Y_val = torch.from_numpy(zRresp[val_idxs]).float()
         return X_train, X_val, X_test, Y_train, Y_val, Y_test, mask
     else:
         X_train = torch.from_numpy(delRstim).float()
@@ -140,7 +150,7 @@ T is the number of fMRI responses.
 M is the number of voxels.
 """
 def calc_stats(Y, Y_pred, print_stats=True, show_vox_corr_hist=False):
-    squared_error = (Y-Y_pred)**2
+    squared_error = (Y-Y_pred).pow(2)
     
     top = ((Y-Y.mean(dim=0))*(Y_pred-Y_pred.mean(dim=0))).sum(dim=0)
     bot = torch.sqrt((Y-Y.mean(dim=0)).pow(2).sum(dim=0)*(Y_pred-Y_pred.mean(dim=0)).pow(2).sum(dim=0))
@@ -156,8 +166,7 @@ def show_stats(Y, Y_pred, show_vox_corr_hist=False):
     squared_error, voxcorrs = calc_stats(Y, Y_pred)
     mse = squared_error.mean()
     r = voxcorrs.mean()
-    print('MSE: ', mse.item())
-    print('Mean Correlation: ', r.item())
+    print(f'MSE: {mse.item():.05f}, MC: {r.item()*100:.03f}%')
     if show_vox_corr_hist:
         plt.title('Correlation over voxels')
         plt.hist(voxcorrs.detach().cpu().numpy(), bins=100)

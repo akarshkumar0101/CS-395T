@@ -24,7 +24,7 @@ def make_delayed(stim, delays, circpad=False):
         else: ## d==0
             dstim = stim.copy()
         dstims.append(dstim)
-    return np.hstack(dstims)
+    return np.stack(dstims, axis=-1)
 
 def best_corr_vec(wvec, vocab, SU, n=10):
     """Returns the [n] words from [vocab] most similar to the given [wvec], where each word is represented
