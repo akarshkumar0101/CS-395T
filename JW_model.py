@@ -30,13 +30,13 @@ class JWModel0(torch.nn.Module):
         # print(X.shape)
 #         Y = self.linear(X) + self.deep1(X)
         # Y = self.deep1(X) + self.deep2(X)
-        # print(self.V[:, :6].shape)
-        # Y = torch.matmul(X, self.V)
+        # print(self.V[:, :100].shape)
+        Y = torch.matmul(X, self.V)
         # print(self.Linear1(X).shape)
         Y = torch.cat((
-          self.dropout(self.Linear1(X).unsqueeze(2)), 
+          self.dropout(self.Linear1(Y).unsqueeze(2)), 
           # self.Linear2(X).unsqueeze(2), 
-          self.dropout(self.Linear3(X).unsqueeze(2))), 2) 
+          self.dropout(self.Linear3(Y).unsqueeze(2))), 2) 
         Y = self.maxPool(Y)
         # print(Y.shape)
         Y = self.FinLin(Y.squeeze())
